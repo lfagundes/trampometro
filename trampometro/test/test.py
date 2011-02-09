@@ -207,14 +207,18 @@ class CommitTest(BaseTest):
 
         self.set_now(10**9)
         open(self.testfile, 'w').write('hello')
+        monitor.check()
         self.set_now(10**9 + 60)
         open(self.testfile, 'a').write(' world')
+        monitor.check()
         self.set_now(10**9 + 120)
         open(self.testfile, 'a').write(' world')
+        monitor.check()
+
+        import ipdb; ipdb.set_trace()
 
         os.system('cd %s; git add testfile; git commit -a -m "Test Message"')
 
-        import ipdb; ipdb.set_trace()
 
 
         
