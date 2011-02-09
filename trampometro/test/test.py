@@ -217,7 +217,7 @@ class CommitTest(BaseTest):
 
         import ipdb; ipdb.set_trace()
 
-        os.system('cd %s; git add testfile; git commit -a -m "Test Message"')
+        os.system('cd %s/testrepo; git add testfile; git commit -a -m "Test Message"' % self.basedir)
 
 
 
