@@ -71,7 +71,7 @@ class RepositoryTest(BaseTest):
 
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
-        
+
         self.set_now(1297247102.816747)
         monitor.notify(testfile)
         self.assertTrue(1297247102.816747 in repo.log)
@@ -91,7 +91,6 @@ class RepositoryTest(BaseTest):
     def test_non_repo_editions_are_not_logged(self):
         self.init_repo('testrepo')
         self.mkdir('nonrepo')
-        testfile = '%s/nonrepo/testfile' % self.basedir
         
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
@@ -101,3 +100,25 @@ class RepositoryTest(BaseTest):
 
         monitor.notify('%s/nonrepo/testfile' % self.basedir)
         self.assertEquals(len(repo.log), 1)
+
+    def test_activity_is_object_independent(self):
+        self.init_repo('testrepo')
+        testfile = '%s/testrepo/testfile' % self.basedir
+
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        monitor.notify(testfile)
+        self.assertEquals(len(repo.log), 1)
+
+        monitor2 = RepositorySet(self.basedir)
+        repo2 = monitor2.get('testrepo')
+        self.assertEquals(len(repo2.log), 1)
+
+        monitor.notify(testfile)
+        self.assertEquals(len(repo.log), 2)
+        self.assertEquals(len(repo2.log), 2)
+        
+
+        
+        

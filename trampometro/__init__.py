@@ -7,9 +7,15 @@ class Repository(object):
     def __init__(self, basedir):
         self.basedir = basedir
         self.name = basedir.rpartition('/')[2]
+        self.logfile = os.path.join(self.basedir, '.worklog')
 
-        self.log = []
-    
+    @property
+    def log(self):
+        return [ float(line) for line in open(self.logfile) ]
+
+    def notify(self):
+        open(self.logfile, 'a').write('%.6f\n' % time.time())
+        
 class RepositorySet(dict):
 
     def __init__(self, basedir):
@@ -26,7 +32,7 @@ class RepositorySet(dict):
         repository = pathname.split('/')[0]
 
         try:
-            self[repository].log.append(time.time())
+            self[repository].notify()
         except KeyError:
             pass
 
