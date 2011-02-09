@@ -8,9 +8,19 @@ class BaseTest(TestCase):
     def setUp(self):
         self.basedir = '/tmp/trampometro-%s' % ''.join([ chr(random.choice(range(65,91))) for i in range(5) ])
         os.mkdir(self.basedir)
+        self.time_patch = None
 
     def tearDown(self):
         os.system('rm -rf %s' % self.basedir)
+        if self.time_patch:
+            self.time_patch.restore()
+
+    def set_now(self, now):
+        if self.time_patch:
+            self.time_patch.restore()
+            
+        fake_time = fudge.Fake('fake_time', callable=True).returns(now)
+        self.time_patch = fudge.patch_object(time, 'time', fake_time)
 
     def mkdir(self, name):
         os.mkdir('%s/%s' % (self.basedir, name))
@@ -51,21 +61,8 @@ class RepositoryTest(BaseTest):
 
     def setUp(self):
         super(RepositoryTest, self).setUp()
-        self.time_patch = None
         self.init_repo('testrepo')
         self.testfile = '%s/testrepo/testfile' % self.basedir
-
-    def tearDown(self):
-        super(RepositoryTest, self).tearDown()        
-        if self.time_patch:
-            self.time_patch.restore()
-            
-    def set_now(self, now):
-        if self.time_patch:
-            self.time_patch.restore()
-            
-        fake_time = fudge.Fake('fake_time', callable=True).returns(now)
-        self.time_patch = fudge.patch_object(time, 'time', fake_time)
 
     def test_log_starts_empty(self):
 
@@ -195,3 +192,32 @@ class FileSystemMonitoringTest(BaseTest):
         monitor.check()
         self.assertTrue(len(repo.log) > 0)        
         repo.clear()
+
+class CommitTest(BaseTest):
+
+    def setUp(self):
+        super(CommitTest, self).setUp()
+        self.time_patch = None
+        self.init_repo('testrepo')
+        self.testfile = '%s/testrepo/testfile' % self.basedir
+
+    def test_commit(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        self.set_now(10**9)
+        open(self.testfile, 'w').write('hello')
+        self.set_now(10**9 + 60)
+        open(self.testfile, 'a').write(' world')
+        self.set_now(10**9 + 120)
+        open(self.testfile, 'a').write(' world')
+
+        os.system('cd %s; git add testfile; git commit -a -m "Test Message"')
+
+        import ipdb; ipdb.set_trace()
+
+
+        
+
+        
+
