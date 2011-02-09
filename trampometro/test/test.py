@@ -176,23 +176,22 @@ class FileSystemMonitoringTest(BaseTest):
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
 
-        self.assertTrue(len(repo.log) == 0)
-
+        self.assertEquals(len(repo.log), 0)
         open(os.path.join(self.basedir, 'testrepo', 'asdf'), 'w').write('hello')
-        
         monitor.check()
-        
         self.assertTrue(len(repo.log) > 0)
 
+    def test_new_directories_are_monitored(self):
+        self.init_repo('testrepo')
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
 
+        os.mkdir(os.path.join(self.basedir, 'testrepo', 'testdir'))
+        monitor.check()
+        repo.clear()
 
-             
-        
-
-
-        
-        
-        
-
-        
-        
+        self.assertEquals(len(repo.log), 0)
+        open(os.path.join(self.basedir, 'testrepo', 'testdir', 'asdf'), 'w').write('hello')
+        monitor.check()
+        self.assertTrue(len(repo.log) > 0)        
+        repo.clear()

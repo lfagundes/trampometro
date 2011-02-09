@@ -3,7 +3,7 @@
 import os, pyinotify, time
 
 DEFAULT_HEARTBEAT = 600
-DEBUG = True
+DEBUG = False
 
 class EventHandler(pyinotify.ProcessEvent):
 
@@ -14,11 +14,9 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
         if DEBUG:
             print "Creating %s" % event.pathname
-        """
         if os.path.isdir(event.pathname):
             self.monitor.register_dir(event.pathname)
 
-        """
         self.monitor.notify(event.pathname)
 
     def process_IN_DELETE(self, event):
@@ -79,7 +77,10 @@ class RepositorySet(dict):
             path = os.path.join(self.basedir, subdir)
             if os.path.isdir(os.path.join(path, '.git')):
                 self[subdir] = Repository(path)
-                self.wm.add_watch(path, self.mask, rec=True)
+                self.register_dir(path)
+
+    def register_dir(self, path):
+        self.wm.add_watch(path, self.mask, rec=True)
 
     def notify(self, pathname):
         if pathname.endswith('.worklog'):
