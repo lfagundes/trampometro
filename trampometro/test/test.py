@@ -108,7 +108,6 @@ class RepositoryTest(BaseTest):
         self.assertEquals(len(repo.log), 1)
 
     def test_activity_is_object_independent(self):
-
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
 
@@ -123,6 +122,55 @@ class RepositoryTest(BaseTest):
         self.assertEquals(len(repo.log), 2)
         self.assertEquals(len(repo2.log), 2)
 
+    def test_empty_log_results_in_no_work(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+        self.assertEquals(repo.calculate_time(), 0)
+        
+
+    def test_work_is_calculated_based_on_log(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        for i in range(11):
+            self.set_now(10**9 + 60 * i)
+            monitor.notify(self.testfile)
+
+        self.assertEquals(repo.calculate_time(heartbeat = 70), 600)
+
+    def test_work_gaps_bigger_than_heartbeat_are_not_considered_in_work_calculation(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        self.set_now(10**9)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 + 60)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 + 200)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 + 260)
+        monitor.notify(self.testfile)
+
+        self.assertEquals(repo.calculate_time(heartbeat = 70), 120)
+        self.assertEquals(repo.calculate_time(heartbeat = 200), 260)
+
+    def test_log_can_be_cleared(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+        
+        self.set_now(10**9)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 + 60)
+        monitor.notify(self.testfile)
+
+        self.assertEquals(repo.calculate_time(heartbeat = 70), 60)
+        self.assertEquals(repo.calculate_time(heartbeat = 70), 60)
+
+        repo.clear()
+        self.assertEquals(repo.calculate_time(heartbeat = 70), 0)
+
+
+        
         
         
 

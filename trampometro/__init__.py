@@ -2,6 +2,8 @@
 
 import os, pyinotify, time
 
+DEFAULT_HEARTBEAT = 600
+
 class Repository(object):
 
     def __init__(self, basedir):
@@ -18,6 +20,24 @@ class Repository(object):
 
     def notify(self):
         open(self.logfile, 'a').write('%.6f\n' % time.time())
+
+    def calculate_time(self, heartbeat = DEFAULT_HEARTBEAT):
+        time = 0
+        activity = self.log
+
+        while activity:
+            start = activity.pop(0)
+            current = start
+            while activity and activity[0] - current <= heartbeat:
+                current = activity.pop(0)
+            time += current - start
+
+        return time
+
+    def clear(self):
+        open(self.logfile, 'w').close()
+            
+                
         
 class RepositorySet(dict):
 
