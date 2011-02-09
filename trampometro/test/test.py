@@ -52,6 +52,8 @@ class RepositoryTest(BaseTest):
     def setUp(self):
         super(RepositoryTest, self).setUp()
         self.time_patch = None
+        self.init_repo('testrepo')
+        self.testfile = '%s/testrepo/testfile' % self.basedir
 
     def tearDown(self):
         super(RepositoryTest, self).tearDown()        
@@ -66,7 +68,6 @@ class RepositoryTest(BaseTest):
         self.time_patch = fudge.patch_object(time, 'time', fake_time)
 
     def test_log_starts_empty(self):
-        self.init_repo('testrepo')
 
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
@@ -74,58 +75,55 @@ class RepositoryTest(BaseTest):
         self.assertEquals(len(repo.log), 0)
 
     def test_edition_timestamps_are_logged(self):
-        self.init_repo('testrepo')
-        testfile = '%s/testrepo/testfile' % self.basedir
 
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
 
         self.set_now(1297247102.816747)
-        monitor.notify(testfile)
+        monitor.notify(self.testfile)
         self.assertTrue(1297247102.816747 in repo.log)
             
         self.set_now(1297247104.816787) 
-        monitor.notify(testfile)
+        monitor.notify(self.testfile)
         self.assertTrue(1297247102.816747 in repo.log)
         self.assertTrue(1297247104.816787 in repo.log)
             
         self.set_now(1297247114.916787) 
-        monitor.notify(testfile)
+        monitor.notify(self.testfile)
         self.assertTrue(1297247102.816747 in repo.log)
         self.assertTrue(1297247104.816787 in repo.log)
         self.assertTrue(1297247114.916787 in repo.log)
 
 
     def test_non_repo_editions_are_not_logged(self):
-        self.init_repo('testrepo')
         self.mkdir('nonrepo')
         
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
         
-        monitor.notify('%s/testrepo/testfile' % self.basedir)
+        monitor.notify(self.testfile)
         self.assertEquals(len(repo.log), 1)
 
         monitor.notify('%s/nonrepo/testfile' % self.basedir)
         self.assertEquals(len(repo.log), 1)
 
     def test_activity_is_object_independent(self):
-        self.init_repo('testrepo')
-        testfile = '%s/testrepo/testfile' % self.basedir
 
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
 
-        monitor.notify(testfile)
+        monitor.notify(self.testfile)
         self.assertEquals(len(repo.log), 1)
 
         monitor2 = RepositorySet(self.basedir)
         repo2 = monitor2.get('testrepo')
         self.assertEquals(len(repo2.log), 1)
 
-        monitor.notify(testfile)
+        monitor.notify(self.testfile)
         self.assertEquals(len(repo.log), 2)
         self.assertEquals(len(repo2.log), 2)
+
+        
         
 
         
