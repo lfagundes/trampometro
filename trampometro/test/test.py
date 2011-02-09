@@ -65,6 +65,14 @@ class RepositoryTest(BaseTest):
         fake_time = fudge.Fake('fake_time', callable=True).returns(now)
         self.time_patch = fudge.patch_object(time, 'time', fake_time)
 
+    def test_log_starts_empty(self):
+        self.init_repo('testrepo')
+
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        self.assertEquals(len(repo.log), 0)
+
     def test_edition_timestamps_are_logged(self):
         self.init_repo('testrepo')
         testfile = '%s/testrepo/testfile' % self.basedir

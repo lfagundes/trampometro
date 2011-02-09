@@ -11,7 +11,10 @@ class Repository(object):
 
     @property
     def log(self):
-        return [ float(line) for line in open(self.logfile) ]
+        try:
+            return [ float(line) for line in open(self.logfile) ]
+        except IOError:
+            return []
 
     def notify(self):
         open(self.logfile, 'a').write('%.6f\n' % time.time())
