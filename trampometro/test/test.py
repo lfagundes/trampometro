@@ -169,6 +169,26 @@ class RepositoryTest(BaseTest):
         repo.clear()
         self.assertEquals(repo.calculate_time(heartbeat = 70), 0)
 
+class FileSystemMonitoringTest(BaseTest):
+
+    def test_monitor_is_notified_when_file_changes(self):
+        self.init_repo('testrepo')
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        self.assertTrue(len(repo.log) == 0)
+
+        open(os.path.join(self.basedir, 'testrepo', 'asdf'), 'w').write('hello')
+        
+        monitor.check()
+        
+        self.assertTrue(len(repo.log) > 0)
+
+
+
+             
+        
+
 
         
         
