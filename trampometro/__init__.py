@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import os, pyinotify, time
+import os, sys, pyinotify, time, re, git
 
-DEFAULT_HEARTBEAT = 600
+DEFAULT_HEARTBEAT = 300
 DEBUG = False
 
 class EventHandler(pyinotify.ProcessEvent):
@@ -14,20 +14,19 @@ class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
         if DEBUG:
             print "Creating %s" % event.pathname
+        self.monitor.notify(event.pathname, event.maskname)
         if os.path.isdir(event.pathname):
             self.monitor.register_dir(event.pathname)
-
-        self.monitor.notify(event.pathname)
 
     def process_IN_DELETE(self, event):
         if DEBUG:
             print "Delete %s" % event.pathname
-        self.monitor.notify(event.pathname)
+        self.monitor.notify(event.pathname, event.maskname)
 
     def process_IN_CLOSE_WRITE(self, event):
         if DEBUG:
             print "Modified %s" % event.pathname
-        self.monitor.notify(event.pathname)
+        self.monitor.notify(event.pathname, event.maskname)
 
 class Repository(object):
 
@@ -35,6 +34,7 @@ class Repository(object):
         self.basedir = basedir
         self.name = basedir.rpartition('/')[2]
         self.logfile = os.path.join(self.basedir, '.worklog')
+        self.repository = git.Repo(self.basedir)
 
     @property
     def log(self):
@@ -45,6 +45,27 @@ class Repository(object):
 
     def notify(self):
         open(self.logfile, 'a').write('%.6f\n' % time.time())
+
+    def is_head_commit(self, commit_id):
+        return self.repository.head.commit.hexsha == commit_id
+
+    def notify_commit(self):
+        current_dir = os.getcwd()
+        os.chdir(self.basedir)
+        
+        worked_time = self.calculate_time()
+        self.clear()
+        
+        log = open(os.path.join(self.basedir, 'worklog'), 'a')
+        log.write('\n')
+        log.write(self.repository.head.commit.summary)
+        log.write('\n')
+        log.write(self.format_time(worked_time))
+        log.write('\n')
+
+        self.repository.index.add(['worklog'])
+        os.system('git commit --amend -C HEAD >/dev/null')
+        os.chdir(current_dir)
 
     def calculate_time(self, heartbeat = DEFAULT_HEARTBEAT):
         time = 0
@@ -61,11 +82,16 @@ class Repository(object):
 
     def clear(self):
         open(self.logfile, 'w').close()
+
+    def format_time(self, time):
+        return '%02d:%02d:%02d' % (int(time/3600), int((time % 3600) / 60), time % 60)
         
 class RepositorySet(dict):
 
     def __init__(self, basedir, timeout=10):
         assert os.path.isdir(basedir)
+
+        self.commiting = False
 
         self.basedir = os.path.realpath(basedir)
         self.wm = pyinotify.WatchManager()
@@ -77,21 +103,38 @@ class RepositorySet(dict):
             path = os.path.join(self.basedir, subdir)
             if os.path.isdir(os.path.join(path, '.git')):
                 self[subdir] = Repository(path)
-                self.register_dir(path)
+                self.wm.add_watch(path, self.mask, rec=True)
 
     def register_dir(self, path):
+        for filename in os.listdir(path):
+            filename = os.path.join(path, filename)
+            self.notify(filename, 'IN_CREATE')
+            if os.path.isdir(filename):
+                self.register_dir(filename)
         self.wm.add_watch(path, self.mask, rec=True)
+        
 
-    def notify(self, pathname):
+    def notify(self, pathname, maskname = None):
         if pathname.endswith('.worklog'):
             return
+
         pathname = os.path.realpath(pathname).replace('%s/' % self.basedir, '')
         repository = pathname.split('/')[0]
 
         try:
             self[repository].notify()
         except KeyError:
-            pass
+            return
+
+        if re.search('.git/objects/[0-9a-f]{2}/[0-9a-f]{38}$', pathname) and maskname == 'IN_CREATE':
+            object_id = ''.join(pathname.split('/')[-2:])
+            if not self[repository].is_head_commit(object_id):
+                return
+            if self.commiting:
+                self.commiting = False
+            else:
+                self.commiting = True
+                self[repository].notify_commit()
 
     def check(self):
         assert self.notifier._timeout is not None, 'Notifier must be constructed with a short timeout'
@@ -103,3 +146,19 @@ class RepositorySet(dict):
     def run(self):
         while True:
             self.check()
+
+
+def run():
+    try:
+        development_dir = sys.argv[1]
+        assert os.path.exists(development_dir)
+    except (IndexError, AssertionError):
+        me = __file__.split('/')[-1]
+        print """Usage: %s development_dir
+
+development_dir is the base dir where your git repositories are""" % me
+        sys.exit(0)
+
+    RepositorySet(development_dir, 20).run()
+    
+

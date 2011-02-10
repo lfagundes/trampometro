@@ -1,6 +1,6 @@
 #coding: utf-8
 
-import os, random, fudge, time
+import os, random, fudge, time, subprocess
 from unittest import TestCase
 from trampometro import RepositorySet, Repository
 
@@ -9,11 +9,14 @@ class BaseTest(TestCase):
         self.basedir = '/tmp/trampometro-%s' % ''.join([ chr(random.choice(range(65,91))) for i in range(5) ])
         os.mkdir(self.basedir)
         self.time_patch = None
+        self.current_dir = os.getcwd()
 
     def tearDown(self):
+        os.chdir(self.current_dir)
         os.system('rm -rf %s' % self.basedir)
         if self.time_patch:
             self.time_patch.restore()
+        
 
     def set_now(self, now):
         if self.time_patch:
@@ -201,6 +204,11 @@ class CommitTest(BaseTest):
         self.init_repo('testrepo')
         self.testfile = '%s/testrepo/testfile' % self.basedir
 
+    def stdout(self, command):
+        proc = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+        proc.wait()
+        return proc.stdout.read()
+        
     def test_commit(self):
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')
@@ -215,9 +223,25 @@ class CommitTest(BaseTest):
         open(self.testfile, 'a').write(' world')
         monitor.check()
 
-        import ipdb; ipdb.set_trace()
+        os.chdir('%s/testrepo' % self.basedir)
 
-        os.system('cd %s/testrepo; git add testfile; git commit -a -m "Test Message"' % self.basedir)
+        os.system('git add testfile >/dev/null')
+        os.system('git commit -a -m "Test Message" >/dev/null')
+
+        monitor.check()
+
+        self.assertTrue(os.path.exists('worklog'))
+        self.assertTrue('new file' not in self.stdout('git status worklog'))
+
+        content = [ line.strip() for line in open('worklog') ]
+        self.assertTrue('Test Message' in content)
+        self.assertTrue('00:02:00' in content)
+        
+                        
+
+        
+
+        
 
 
 
