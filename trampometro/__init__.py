@@ -60,7 +60,7 @@ class Repository(object):
             os.mkdir('meta')
         log = open(os.path.join(self.basedir, 'meta/worklog'), 'a')
         log.write('\n')
-        log.write(self.repository.head.commit.summary)
+        log.write(self.repository.head.commit.summary.encode('latin-1'))
         log.write('\n')
         log.write(self.format_time(worked_time))
         log.write('\n')

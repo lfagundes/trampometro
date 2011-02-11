@@ -1,4 +1,4 @@
-#coding: utf-8
+# -*- coding: utf-8 -*-
 
 import os, random, fudge, time, subprocess
 from unittest import TestCase
@@ -31,7 +31,6 @@ class BaseTest(TestCase):
     def init_repo(self, name):
         if not os.path.exists('%s/%s' % (self.basedir, name)):
             self.mkdir(name)
-
         os.system('git init %s/%s >/dev/null' % (self.basedir, name))
 
 class RepositorySetTest(BaseTest):
@@ -258,6 +257,25 @@ class CommitTest(BaseTest):
         self.assertTrue('Yet another message' in content)
         self.assertTrue('00:01:00' in content)
 
+    def test_commit_accepts_non_ascii(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        self.set_now(10**9)
+        open(self.testfile, 'w').write('hello')
+        monitor.check()
+        self.set_now(10**9 + 60)
+        open(self.testfile, 'a').write(' world')
+        monitor.check()
+
+        os.chdir('%s/testrepo' % self.basedir)
+
+        os.system('git add testfile >/dev/null')
+        os.system('git commit -a -m `cat %s` >/dev/null' % os.path.join(os.path.dirname(__file__), 'utf_message.txt'))
+  
+        monitor.check()
+
+  
         
                         
 
