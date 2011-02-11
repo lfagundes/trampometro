@@ -230,12 +230,34 @@ class CommitTest(BaseTest):
 
         monitor.check()
 
-        self.assertTrue(os.path.exists('worklog'))
+        self.assertTrue(os.path.exists('meta/worklog'))
         self.assertTrue('nothing to commit' in self.stdout('git status worklog'))
 
-        content = [ line.strip() for line in open('worklog') ]
+        content = [ line.strip() for line in open('meta/worklog') ]
         self.assertTrue('Test Message' in content)
         self.assertTrue('00:02:00' in content)
+
+        open(self.testfile, 'a').write('more')
+        self.set_now(10**9 + 1220)
+        monitor.check()
+        open(self.testfile, 'a').write('yet')
+        self.set_now(10**9 + 1280)
+        monitor.check()
+        
+        os.system('git commit -a -m "Yet another message" >/dev/null')
+        monitor.check()
+
+        self.assertTrue(os.path.exists('meta/worklog'))
+        self.assertTrue('nothing to commit' in self.stdout('git status worklog'))
+
+        content = [ line.strip() for line in open('meta/worklog') ]
+        self.assertTrue('Test Message' in content)
+        self.assertTrue('00:02:00' in content)
+        import ipdb; ipdb.set_trace()
+        content = content[int(len(content)/2):]
+        self.assertTrue('Yet another message' in content)
+        self.assertTrue('00:01:00' in content)
+
         
                         
 

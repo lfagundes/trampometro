@@ -55,8 +55,10 @@ class Repository(object):
         
         worked_time = self.calculate_time()
         self.clear()
-        
-        log = open(os.path.join(self.basedir, 'worklog'), 'a')
+
+        if not os.path.isdir('meta'):
+            os.mkdir('meta')
+        log = open(os.path.join(self.basedir, 'meta/worklog'), 'a')
         log.write('\n')
         log.write(self.repository.head.commit.summary)
         log.write('\n')
@@ -64,7 +66,7 @@ class Repository(object):
         log.write('\n')
         log.close()
         
-        self.repository.index.add(['worklog'])
+        self.repository.index.add(['meta/worklog'])
         os.system('git commit --amend -C HEAD >/dev/null')
         os.chdir(current_dir)
 
