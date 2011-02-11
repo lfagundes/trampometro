@@ -35,6 +35,7 @@ class Repository(object):
         self.name = basedir.rpartition('/')[2]
         self.logfile = os.path.join(self.basedir, '.worklog')
         self.repository = git.Repo(self.basedir)
+        self.last_commit = ''
 
     @property
     def log(self):
@@ -68,6 +69,9 @@ class Repository(object):
         
         self.repository.index.add(['meta/worklog'])
         os.system('git commit --amend -C HEAD >/dev/null')
+
+        self.last_commit = self.repository.head.commit.hexsha
+        
         os.chdir(current_dir)
 
     def calculate_time(self, heartbeat = DEFAULT_HEARTBEAT):
@@ -93,8 +97,6 @@ class RepositorySet(dict):
 
     def __init__(self, basedir, timeout=10):
         assert os.path.isdir(basedir)
-
-        self.commiting = False
 
         self.basedir = os.path.realpath(basedir)
         self.wm = pyinotify.WatchManager()
@@ -133,10 +135,8 @@ class RepositorySet(dict):
             object_id = ''.join(pathname.split('/')[-2:])
             if not self[repository].is_head_commit(object_id):
                 return
-            if self.commiting:
-                self.commiting = False
-            else:
-                self.commiting = True
+
+            if object_id != self[repository].last_commit:
                 self[repository].notify_commit()
 
     def check(self):
