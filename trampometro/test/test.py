@@ -253,7 +253,7 @@ class CommitTest(BaseTest):
         content = [ line.strip() for line in open('meta/worklog') ]
         self.assertTrue('Test Message' in content)
         self.assertTrue('00:02:00' in content)
-        import ipdb; ipdb.set_trace()
+
         content = content[int(len(content)/2):]
         self.assertTrue('Yet another message' in content)
         self.assertTrue('00:01:00' in content)
