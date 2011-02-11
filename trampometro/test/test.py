@@ -231,7 +231,7 @@ class CommitTest(BaseTest):
         monitor.check()
 
         self.assertTrue(os.path.exists('worklog'))
-        self.assertTrue('new file' not in self.stdout('git status worklog'))
+        self.assertTrue('nothing to commit' in self.stdout('git status worklog'))
 
         content = [ line.strip() for line in open('worklog') ]
         self.assertTrue('Test Message' in content)

@@ -62,7 +62,8 @@ class Repository(object):
         log.write('\n')
         log.write(self.format_time(worked_time))
         log.write('\n')
-
+        log.close()
+        
         self.repository.index.add(['worklog'])
         os.system('git commit --amend -C HEAD >/dev/null')
         os.chdir(current_dir)
@@ -144,8 +145,7 @@ class RepositorySet(dict):
             self.notifier.process_events()
 
     def run(self):
-        while True:
-            self.check()
+        self.notifier.loop()
 
 
 def run():
@@ -159,6 +159,6 @@ def run():
 development_dir is the base dir where your git repositories are""" % me
         sys.exit(0)
 
-    RepositorySet(development_dir, 20).run()
+    RepositorySet(development_dir, 50).run()
     
 
