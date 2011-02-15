@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import os, sys, pyinotify, time, re, git
+from subprocess import Popen, PIPE
 
 DEFAULT_HEARTBEAT = 300
-DEBUG = False
+DEBUG_LEVEL = 0
 
 class EventHandler(pyinotify.ProcessEvent):
 
@@ -12,20 +13,14 @@ class EventHandler(pyinotify.ProcessEvent):
         self.monitor = monitor
 
     def process_IN_CREATE(self, event):
-        if DEBUG:
-            print "Creating %s" % event.pathname
         self.monitor.notify(event.pathname, event.maskname)
         if os.path.isdir(event.pathname):
             self.monitor.register_dir(event.pathname)
 
     def process_IN_DELETE(self, event):
-        if DEBUG:
-            print "Delete %s" % event.pathname
         self.monitor.notify(event.pathname, event.maskname)
 
     def process_IN_CLOSE_WRITE(self, event):
-        if DEBUG:
-            print "Modified %s" % event.pathname
         self.monitor.notify(event.pathname, event.maskname)
 
 class Repository(object):
@@ -47,10 +42,23 @@ class Repository(object):
     def notify(self):
         open(self.logfile, 'a').write('%.6f\n' % time.time())
 
+    def is_commit(self, object_id):
+        current_dir = os.getcwd()
+        os.chdir(self.basedir)
+        proc = Popen(('git cat-file -t %s' % object_id).split(), stdout=PIPE)
+        proc.wait()
+        os.chdir(current_dir)
+        return proc.stdout.read().strip() == 'commit'
+
     def is_head_commit(self, commit_id):
+        if DEBUG_LEVEL > 1:
+            print "head commit is %s, this one is %s" % (self.repository.head.commit.hexsha, commit_id)
         return self.repository.head.commit.hexsha == commit_id
 
     def notify_commit(self):
+        if DEBUG_LEVEL > 0:
+            print "commit notified on %s" % self.name
+            
         current_dir = os.getcwd()
         os.chdir(self.basedir)
         
@@ -66,6 +74,9 @@ class Repository(object):
         log.write(self.format_time(worked_time))
         log.write('\n')
         log.close()
+
+        if DEBUG_LEVEL > 0:
+            print "logged %s on %s" % (self.name, self.format_time(worked_time))
         
         self.repository.index.add(['meta/worklog'])
         os.system('git commit --amend -C HEAD >/dev/null')
@@ -111,15 +122,18 @@ class RepositorySet(dict):
                 self.wm.add_watch(path, self.mask, rec=True)
 
     def register_dir(self, path):
+        self.wm.add_watch(path, self.mask, rec=True)
         for filename in os.listdir(path):
             filename = os.path.join(path, filename)
             self.notify(filename, 'IN_CREATE')
             if os.path.isdir(filename):
                 self.register_dir(filename)
-        self.wm.add_watch(path, self.mask, rec=True)
         
 
     def notify(self, pathname, maskname = None):
+        if DEBUG_LEVEL > 1:
+            print "%s %s" % (maskname, pathname)
+
         if pathname.endswith('.worklog'):
             return
 
@@ -129,15 +143,35 @@ class RepositorySet(dict):
         try:
             self[repository].notify()
         except KeyError:
+            if DEBUG_LEVEL > 1:
+                print "No such repository %s" % repository
             return
 
         if re.search('.git/objects/[0-9a-f]{2}/[0-9a-f]{38}$', pathname) and maskname == 'IN_CREATE':
+            if DEBUG_LEVEL > 1:
+                print "New git object detected"
             object_id = ''.join(pathname.split('/')[-2:])
-            if not self[repository].is_head_commit(object_id):
+
+            if not self[repository].is_commit(object_id):
+                # Object is not commit, ignore
+                return
+            
+            if object_id == self[repository].last_commit:
+                # This was our last commit logging work time, ignore
                 return
 
-            if object_id != self[repository].last_commit:
-                self[repository].notify_commit()
+            """
+            The test below was substituted by is_commit(), because there is a delay
+            before the just created commit becomes the head commit
+            
+            if not self[repository].is_head_commit(object_id):
+                return
+            """
+
+            if DEBUG_LEVEL > 0:
+                print "Commit is head commit"
+
+            self[repository].notify_commit()
 
     def check(self):
         assert self.notifier._timeout is not None, 'Notifier must be constructed with a short timeout'

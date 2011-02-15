@@ -275,6 +275,21 @@ class CommitTest(BaseTest):
   
         monitor.check()
 
+    def test_repository_can_identify_if_object_is_commit_or_not(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+
+        open(self.testfile, 'w').write('hello world')
+        
+        os.chdir('%s/testrepo' % self.basedir)
+        os.system('git add testfile >/dev/null')
+        os.system('git config --global user.name "Trampometro tester"')
+        os.system('git config --global user.email "trampometro@example.com"')
+        os.system('GIT_COMMITTER_DATE="Tue Feb 15 08:50:31 BRST 2011" git commit -a -m "test commit" --date="Tue Feb 15 08:50:31 BRST 2011" --author="Trampometro tester <trampometro@example.com>"')
+
+        self.assertTrue(not repo.is_commit('95d09f2b10159347eece71399a7e2e907ea3df4f'))
+        self.assertTrue(not repo.is_commit('d34a3a0c29dbfab0dc7469cb6f7afeb52d6d1edd'))
+        self.assertTrue(repo.is_commit('f7eb24d3aeb8d6ac71f147eaad97fd44192d6365'))
   
         
                         
