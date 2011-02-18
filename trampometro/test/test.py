@@ -283,8 +283,8 @@ class CommitTest(BaseTest):
         
         os.chdir('%s/testrepo' % self.basedir)
         os.system('git add testfile >/dev/null')
-        os.system('git config --global user.name "Trampometro tester"')
-        os.system('git config --global user.email "trampometro@example.com"')
+        os.system('git config user.name "Trampometro tester"')
+        os.system('git config user.email "trampometro@example.com"')
         os.system('GIT_COMMITTER_DATE="Tue Feb 15 08:50:31 BRST 2011" git commit -a -m "test commit" --date="Tue Feb 15 08:50:31 BRST 2011" --author="Trampometro tester <trampometro@example.com>"')
 
         self.assertTrue(not repo.is_commit('95d09f2b10159347eece71399a7e2e907ea3df4f'))
