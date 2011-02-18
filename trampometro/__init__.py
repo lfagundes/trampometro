@@ -55,7 +55,7 @@ class Repository(object):
             print "head commit is %s, this one is %s" % (self.repository.head.commit.hexsha, commit_id)
         return self.repository.head.commit.hexsha == commit_id
 
-    def notify_commit(self):
+    def notify_commit(self, object_id):
         if DEBUG_LEVEL > 0:
             print "commit notified on %s" % self.name
             
@@ -65,13 +65,21 @@ class Repository(object):
         worked_time = self.calculate_time()
         self.clear()
 
+        proc = Popen(('git cat-file -p %s' % object_id).split(), stdout=PIPE)
+        proc.wait()
+        commit_info = proc.stdout.read()
+        author_info = [ line for line in commit_info.split('\n') if line.startswith('author') ][0].split()
+        author = ' '.join(author_info[1:-2])
+
         if not os.path.isdir('meta'):
             os.mkdir('meta')
         log = open(os.path.join(self.basedir, 'meta/worklog'), 'a')
         log.write('\n')
-        log.write(self.repository.head.commit.summary.encode('latin-1'))
+        log.write(author)
         log.write('\n')
         log.write(self.format_time(worked_time))
+        log.write('\n')
+        log.write(self.repository.head.commit.summary.encode('latin-1'))
         log.write('\n')
         log.close()
 
@@ -182,7 +190,7 @@ class RepositorySet(dict):
             if DEBUG_LEVEL > 0:
                 print "Commit does not come from a fetch"
 
-            self[repository].notify_commit()
+            self[repository].notify_commit(object_id)
 
     def check(self):
         assert self.notifier._timeout is not None, 'Notifier must be constructed with a short timeout'

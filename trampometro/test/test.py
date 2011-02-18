@@ -33,9 +33,14 @@ class BaseTest(TestCase):
         os.mkdir('%s/%s' % (self.basedir, name))
 
     def init_repo(self, name):
+        current_dir = os.getcwd()
         if not os.path.exists('%s/%s' % (self.basedir, name)):
             self.mkdir(name)
-        os.system('git init %s/%s >/dev/null' % (self.basedir, name))
+        os.chdir('%s/%s' % (self.basedir, name))
+        os.system('git init >/dev/null')
+        os.system('git config user.name "Trampometro tester"')
+        os.system('git config user.email "trampometro@example.com"')
+        os.chdir(current_dir)
 
 class RepositorySetTest(BaseTest):
 
@@ -253,6 +258,7 @@ class CommitTest(BaseTest):
         self.assertTrue('nothing to commit' in self.stdout('git status worklog'))
 
         content = [ line.strip() for line in open('meta/worklog') ]
+        self.assertTrue('Trampometro tester <trampometro@example.com>' in content)
         self.assertTrue('Test Message' in content)
         self.assertTrue('00:02:00' in content)
 
@@ -303,8 +309,6 @@ class CommitTest(BaseTest):
         
         os.chdir('%s/testrepo' % self.basedir)
         os.system('git add testfile 2>/dev/null')
-        os.system('git config user.name "Trampometro tester"')
-        os.system('git config user.email "trampometro@example.com"')
         os.system('GIT_COMMITTER_DATE="Tue Feb 15 08:50:31 BRST 2011" git commit -a -m "test commit" --date="Tue Feb 15 08:50:31 BRST 2011" --author="Trampometro tester <trampometro@example.com>" >/dev/null 2>/dev/null')
         
         self.assertTrue(not repo.is_commit('95d09f2b10159347eece71399a7e2e907ea3df4f'))
