@@ -157,6 +157,22 @@ class RepositoryTest(BaseTest):
         self.assertEquals(repo.calculate_time(heartbeat = 70), 120)
         self.assertEquals(repo.calculate_time(heartbeat = 200), 260)
 
+    def test_if_clock_is_adjusted_to_earlier_time_during_monitoring_than_negative_gap_is_ignored(self):
+        monitor = RepositorySet(self.basedir)
+        repo = monitor.get('testrepo')
+        
+        self.set_now(10**9)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 + 60)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 - 1000)
+        monitor.notify(self.testfile)
+        self.set_now(10**9 -1000 + 60)
+        monitor.notify(self.testfile)
+
+        self.assertEquals(repo.calculate_time(heartbeat = 200), 120)
+
+
     def test_log_can_be_cleared(self):
         monitor = RepositorySet(self.basedir)
         repo = monitor.get('testrepo')

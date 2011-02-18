@@ -92,7 +92,7 @@ class Repository(object):
         while activity:
             start = activity.pop(0)
             current = start
-            while activity and activity[0] - current <= heartbeat:
+            while activity and activity[0] - current <= heartbeat and activity[0] >= current:
                 current = activity.pop(0)
             time += current - start
 
