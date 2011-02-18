@@ -169,7 +169,18 @@ class RepositorySet(dict):
             """
 
             if DEBUG_LEVEL > 0:
-                print "Commit is head commit"
+                print "Object is commit"
+
+            try:
+                fetch_head = os.path.join(self[repository].basedir, '.git/FETCH_HEAD')
+                fetch_object_id = open(fetch_head).read().split()[0]
+                if object_id == fetch_object_id:
+                    return
+            except IOError: #no such file
+                pass
+
+            if DEBUG_LEVEL > 0:
+                print "Commit does not come from a fetch"
 
             self[repository].notify_commit()
 

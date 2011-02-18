@@ -4,6 +4,10 @@ import os, random, fudge, time, subprocess
 from unittest import TestCase
 from trampometro import RepositorySet, Repository
 
+def dev(test):
+    test.tags = 'dev'
+    return test
+    
 class BaseTest(TestCase):
     def setUp(self):
         self.basedir = '/tmp/trampometro-%s' % ''.join([ chr(random.choice(range(65,91))) for i in range(5) ])
@@ -282,25 +286,54 @@ class CommitTest(BaseTest):
         open(self.testfile, 'w').write('hello world')
         
         os.chdir('%s/testrepo' % self.basedir)
-        os.system('git add testfile >/dev/null')
+        os.system('git add testfile 2>/dev/null')
         os.system('git config user.name "Trampometro tester"')
         os.system('git config user.email "trampometro@example.com"')
-        os.system('GIT_COMMITTER_DATE="Tue Feb 15 08:50:31 BRST 2011" git commit -a -m "test commit" --date="Tue Feb 15 08:50:31 BRST 2011" --author="Trampometro tester <trampometro@example.com>"')
-
+        os.system('GIT_COMMITTER_DATE="Tue Feb 15 08:50:31 BRST 2011" git commit -a -m "test commit" --date="Tue Feb 15 08:50:31 BRST 2011" --author="Trampometro tester <trampometro@example.com>" >/dev/null 2>/dev/null')
+        
         self.assertTrue(not repo.is_commit('95d09f2b10159347eece71399a7e2e907ea3df4f'))
         self.assertTrue(not repo.is_commit('d34a3a0c29dbfab0dc7469cb6f7afeb52d6d1edd'))
         self.assertTrue(repo.is_commit('f7eb24d3aeb8d6ac71f147eaad97fd44192d6365'))
-  
+
+    def test_pull_is_not_considered(self):
+
+        os.chdir(self.basedir)
+
+        os.system('git clone testrepo testclone 2>/dev/null >/dev/null')
+
+        os.chdir('%s/testrepo' % self.basedir)
+        open('somefile', 'w').write('hello world')
+        os.system('git add somefile >/dev/null')
+        os.system('git commit -a -m "test commit" >/dev/null')
+
+        monitor = RepositorySet(self.basedir)
+
+        start = time.time()
         
-                        
+        os.chdir('%s/testclone' % self.basedir)
+
+        open('testfile', 'w').write('hello')
+        monitor.check()
+        self.set_now(start + 60)
+        open('testfile', 'a').write(' world')
+        monitor.check()
+
+        os.system('git pull >/dev/null 2>/dev/null')
+        monitor.check()
+        self.set_now(start + 110.1)
+        open('testfile', 'a').write('!!')
+        monitor.check()
+
+        os.system('git add testfile > /dev/null')
+        os.system('git commit -a -m "second commit" 2>/dev/null > /dev/null')
+        monitor.check()
+
+        content = [ line.strip() for line in open('meta/worklog') ]
+        self.assertTrue('second commit' in content)
+        self.assertTrue('00:01:50' in content)
+
 
         
 
-        
-
-
 
         
-
-        
-
