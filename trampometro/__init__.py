@@ -129,7 +129,8 @@ class RepositorySet(dict):
                 self[subdir] = Repository(path)
                 self.wm.add_watch(path, self.mask, rec=True)
 
-        self.status = None
+        self.status = 'IDLE'
+        self.last_activity = time.time()
 
     def register_dir(self, path):
         self.wm.add_watch(path, self.mask, rec=True)
@@ -153,6 +154,8 @@ class RepositorySet(dict):
         try:
             self[repository].notify()
             self.status = 'Working on %s' % repository
+            self.last_activity = time.time()
+            
         except KeyError:
             if DEBUG_LEVEL > 1:
                 print "No such repository %s" % repository
@@ -197,6 +200,8 @@ class RepositorySet(dict):
 
     def check(self):
         assert self.notifier._timeout is not None, 'Notifier must be constructed with a short timeout'
+        if time.time() - self.last_activity > DEFAULT_HEARTBEAT:
+            self.status = 'IDLE'
         self.notifier.process_events()
         while self.notifier.check_events():
             self.notifier.read_events()

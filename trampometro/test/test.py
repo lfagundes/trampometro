@@ -2,7 +2,7 @@
 
 import os, random, fudge, time, subprocess
 from unittest import TestCase
-from trampometro import RepositorySet, Repository
+from trampometro import RepositorySet, Repository, DEFAULT_HEARTBEAT
 
 def dev(test):
     test.tags = 'dev'
@@ -383,6 +383,21 @@ class StatusTest(BaseTest):
         self.monitor.check()
         self.assertEquals(self.monitor.status, 'Working on repo1')
 
+    def test_inactivity_makes_status_idle(self):
+
+        self.assertEquals(self.monitor.status, 'IDLE')
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'IDLE')
+
+        self.set_now(100)
+
+        open('repo1/asdf', 'w').close()
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'Working on repo1')
+
+        self.set_now(101 + DEFAULT_HEARTBEAT)
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'IDLE')
 
         
 
