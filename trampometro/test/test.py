@@ -359,6 +359,30 @@ class CommitTest(BaseTest):
         self.assertTrue('second commit' in content)
         self.assertTrue('00:01:50' in content)
 
+class StatusTest(BaseTest):
+
+    def setUp(self):
+        super(StatusTest, self).setUp()
+        self.init_repo('repo1')
+        self.init_repo('repo2')
+        os.chdir(self.basedir)
+        self.monitor = RepositorySet(self.basedir)
+
+    def test_activity_in_project_changes_repositoryset_status(self):
+        open('repo1/asdf', 'w').close()
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'Working on repo1')
+
+        open('repo2/asdf', 'w').close()
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'Working on repo2')
+
+        open('repo1/asdf', 'w').close()
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'Working on repo1')
+        self.monitor.check()
+        self.assertEquals(self.monitor.status, 'Working on repo1')
+
 
         
 

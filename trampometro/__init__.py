@@ -129,6 +129,8 @@ class RepositorySet(dict):
                 self[subdir] = Repository(path)
                 self.wm.add_watch(path, self.mask, rec=True)
 
+        self.status = None
+
     def register_dir(self, path):
         self.wm.add_watch(path, self.mask, rec=True)
         for filename in os.listdir(path):
@@ -150,6 +152,7 @@ class RepositorySet(dict):
 
         try:
             self[repository].notify()
+            self.status = 'Working on %s' % repository
         except KeyError:
             if DEBUG_LEVEL > 1:
                 print "No such repository %s" % repository
