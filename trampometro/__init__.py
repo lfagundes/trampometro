@@ -79,7 +79,7 @@ class Repository(object):
         log.write('\n')
         log.write(self.format_time(worked_time))
         log.write('\n')
-        log.write(self.repository.head.commit.summary.encode('latin-1'))
+        log.write(self.repository.head.commit.summary.encode('utf-8'))
         log.write('\n')
         log.close()
 

@@ -296,10 +296,17 @@ class CommitTest(BaseTest):
 
         os.chdir('%s/testrepo' % self.basedir)
 
+        utf_message_file = os.path.join(os.path.dirname(__file__), 'utf_message.txt')
+
         os.system('git add testfile >/dev/null')
-        os.system('git commit -a -m `cat %s` >/dev/null' % os.path.join(os.path.dirname(__file__), 'utf_message.txt'))
+        os.system('git commit -a -m `cat %s` >/dev/null' % utf_message_file)
   
         monitor.check()
+
+        utf_message = open(utf_message_file).read().strip()
+        worklog = open('meta/worklog').read()
+
+        self.assertTrue(utf_message in worklog)
 
     def test_repository_can_identify_if_object_is_commit_or_not(self):
         monitor = RepositorySet(self.basedir)

@@ -7,3 +7,6 @@ basic README file
 
 author appears in meta/worklog
 00:11:01
+
+correctly encodes messages in utf-8 instead of latin-1
+00:04:52
