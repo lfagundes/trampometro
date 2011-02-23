@@ -22,3 +22,7 @@ commit is reported on status
 Luis Fagundes <lhfagundes@hacklab.com.br>
 00:20:49
 [NEW] simple gnome applet as interface for trampometro
+
+Luis Fagundes <lhfagundes@hacklab.com.br>
+00:02:36
+[fix] directory created and instantly removed does not raise error anymore

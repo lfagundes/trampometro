@@ -220,6 +220,19 @@ class FileSystemMonitoringTest(BaseTest):
         self.assertTrue(len(repo.log) > 0)        
         repo.clear()
 
+    def test_if_new_directory_is_created_and_instantly_removed_error_does_not_happen(self):
+        self.init_repo('testrepo')
+        monitor = RepositorySet(self.basedir)
+        fake = fudge.Fake('isdir', callable=True).returns(True)
+        patch = fudge.patch_object(os.path, 'isdir', fake)
+        try:
+            monitor.check()
+            os.mkdir(os.path.join(self.basedir, 'testrepo', 'testdir'))
+            os.rmdir(os.path.join(self.basedir, 'testrepo', 'testdir'))
+            monitor.check()
+        finally:
+            patch.restore()
+        
 class CommitTest(BaseTest):
 
     def setUp(self):
@@ -398,7 +411,6 @@ class StatusTest(BaseTest):
         self.monitor.check()
         self.assertEquals(self.monitor.status, 'IDLE')
 
-    @dev
     def test_recent_commit_is_reported_on_status(self):
         os.chdir('repo1')
         

@@ -134,11 +134,15 @@ class RepositorySet(dict):
 
     def register_dir(self, path):
         self.wm.add_watch(path, self.mask, rec=True)
-        for filename in os.listdir(path):
-            filename = os.path.join(path, filename)
-            self.notify(filename, 'IN_CREATE')
-            if os.path.isdir(filename):
-                self.register_dir(filename)
+        try:
+            for filename in os.listdir(path):
+                filename = os.path.join(path, filename)
+                self.notify(filename, 'IN_CREATE')
+                if os.path.isdir(filename):
+                    self.register_dir(filename)
+        except OSError:
+            # Directory might have been removed
+            pass
         
 
     def notify(self, pathname, maskname = None):
