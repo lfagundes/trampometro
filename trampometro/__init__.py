@@ -153,7 +153,8 @@ class RepositorySet(dict):
 
         try:
             self[repository].notify()
-            self.status = 'Working on %s' % repository
+            if '/.git/' not in pathname and not re.search('meta(/worklog)?$', pathname):
+                self.status = 'Working on %s' % repository
             self.last_activity = time.time()
             
         except KeyError:
@@ -196,6 +197,7 @@ class RepositorySet(dict):
             if DEBUG_LEVEL > 0:
                 print "Commit does not come from a fetch"
 
+            self.status = '%s %s' % (repository, self[repository].format_time(self[repository].calculate_time()))
             self[repository].notify_commit(object_id)
 
     def check(self):

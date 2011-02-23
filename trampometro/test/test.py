@@ -384,7 +384,6 @@ class StatusTest(BaseTest):
         self.assertEquals(self.monitor.status, 'Working on repo1')
 
     def test_inactivity_makes_status_idle(self):
-
         self.assertEquals(self.monitor.status, 'IDLE')
         self.monitor.check()
         self.assertEquals(self.monitor.status, 'IDLE')
@@ -398,6 +397,24 @@ class StatusTest(BaseTest):
         self.set_now(101 + DEFAULT_HEARTBEAT)
         self.monitor.check()
         self.assertEquals(self.monitor.status, 'IDLE')
+
+    @dev
+    def test_recent_commit_is_reported_on_status(self):
+        os.chdir('repo1')
+        
+        self.set_now(10**9)
+        open('testfile', 'w').write('hello')
+        self.monitor.check()
+        self.set_now(10**9 + 60)
+        open('testfile', 'a').write(' world')
+        self.monitor.check()
+
+        os.system('git add testfile')
+        os.system('git commit -a -m "first commit" 2>/dev/null > /dev/null')
+
+        self.monitor.check()
+        
+        self.assertEquals(self.monitor.status, 'repo1 00:01:00')
 
         
 
