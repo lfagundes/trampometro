@@ -192,9 +192,10 @@ class RepositorySet(dict):
 
             try:
                 fetch_head = os.path.join(self[repository].basedir, '.git/FETCH_HEAD')
-                fetch_object_id = open(fetch_head).read().split()[0]
-                if object_id == fetch_object_id:
-                    return
+                if os.path.exists(fetch_head):
+                    fetch_object_id = open(fetch_head).read().split()[0]
+                    if object_id == fetch_object_id:
+                        return
             except IOError: #no such file
                 pass
 

@@ -26,3 +26,7 @@ Luis Fagundes <lhfagundes@hacklab.com.br>
 Luis Fagundes <lhfagundes@hacklab.com.br>
 00:02:36
 [fix] directory created and instantly removed does not raise error anymore
+
+Luis Fagundes <lhfagundes@hacklab.com.br>
+00:00:09
+avoid error when there's no fetch_head
