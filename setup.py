@@ -17,5 +17,6 @@ setup(name = 'trampometro',
           },
       data_files = [
           ('/usr/lib/bonobo/servers', ['GNOME_TrampometroApplet_Factory.server']),
-          ]
+          ],
+      install_requires = ['gitpython']
 )
